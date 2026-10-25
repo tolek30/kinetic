@@ -39,6 +39,7 @@ PORT = int(os.environ.get("PORT", "7399"))
 HOST = os.environ.get("HOST", "0.0.0.0")
 ROLE = "host"
 DESKTOP_MODE = False
+APP_VERSION = "2.0.1"
 MAX_UPLOAD_BYTES = 30 * 1024 * 1024
 MAX_IMAGE_DIMENSION = 16_384
 MAX_IMAGE_PIXELS = 100_000_000
@@ -423,6 +424,43 @@ async def proxy_request(method: str, path: str, body: bytes = b"") -> Response:
         return JSONResponse({"error": "Host is unavailable."}, status_code=502)
 
 
+@app.get("/api/release")
+async def check_release():
+    try:
+        req = urllib.request.Request(
+            "https://api.github.com/repos/tolek30/kinetic/releases/latest",
+            headers={"User-Agent": "KINETIC-App"}
+        )
+        def fetch_release():
+            with urllib.request.urlopen(req, timeout=5) as response:
+                return json.loads(response.read().decode("utf-8"))
+        data = await asyncio.to_thread(fetch_release)
+        tag_name = data.get("tag_name", "").lstrip("v")
+        name = data.get("name", data.get("tag_name", "New release"))
+        body = data.get("body", "")
+        download_url = None
+        for asset in data.get("assets", []):
+            asset_name = asset.get("name", "")
+            if asset_name.lower().startswith("kinetic") and asset_name.lower().endswith(".exe"):
+                download_url = asset.get("browser_download_url")
+                break
+        if not download_url:
+            download_url = data.get("html_url")
+        current = APP_VERSION
+        update_available = bool(tag_name and tag_name != current)
+        return {
+            "ok": True,
+            "currentVersion": current,
+            "latestVersion": tag_name or current,
+            "updateAvailable": update_available,
+            "releaseName": name,
+            "releaseNotes": body[:500],
+            "downloadUrl": download_url
+        }
+    except Exception as e:
+        return {"ok": False, "currentVersion": APP_VERSION, "latestVersion": APP_VERSION, "updateAvailable": False, "error": str(e)}
+
+
 @app.get("/api/health")
 async def health(request: Request):
     if ROLE == "instance":
@@ -438,6 +476,7 @@ async def health(request: Request):
             upstream_data.get("networkUrls", [None])[0] if upstream_data.get("networkUrls") else None
         )
         return {"ok": True, "role": ROLE, "instanceId": INSTANCE_ID, "version": 7,
+                "appVersion": APP_VERSION,
                 "desktop": DESKTOP_MODE,
                 "port": PORT, "revision": 0, "uptime": int(time.monotonic() - STARTED_AT), "clients": {},
                 "networkUrls": [share_url] if share_url else [],
@@ -452,6 +491,7 @@ async def health(request: Request):
     public_url = host_settings.get("publicUrl", "")
     public_overlay = overlay_url(room_id, public_url) if public_url and room else None
     return {"ok": True, "role": ROLE, "capacity": host_settings["maxRooms"], "port": PORT, "version": 7,
+            "appVersion": APP_VERSION,
             "revision": room["revision"] if room else 0, "uptime": int(time.monotonic() - STARTED_AT),
             "clients": client_counts(room) if room else {}, "desktop": DESKTOP_MODE, "networkUrls": network_urls,
             "overlayUrl": overlay_url(room_id) if room and is_local else public_overlay,

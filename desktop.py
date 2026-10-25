@@ -3,7 +3,9 @@ from __future__ import annotations
 import json
 import ipaddress
 import os
+import shutil
 import socket
+import subprocess
 import sys
 import threading
 import time
@@ -66,6 +68,41 @@ def available_local_port(preferred: int) -> int:
             return preferred
     except OSError:
         return free_local_port()
+
+
+def create_start_menu_shortcut() -> None:
+    try:
+        start_menu = Path(os.environ.get("APPDATA", "")) / "Microsoft" / "Windows" / "Start Menu" / "Programs"
+        start_menu.mkdir(parents=True, exist_ok=True)
+        shortcut_path = start_menu / "KINETIC.lnk"
+        
+        if getattr(sys, "frozen", False):
+            target = sys.executable
+            workdir = str(Path(target).parent)
+        else:
+            root_dir = Path(__file__).resolve().parent
+            start_cmd = root_dir / "start.cmd"
+            target = str(start_cmd) if start_cmd.exists() else sys.executable
+            workdir = str(root_dir)
+
+        ps_command = (
+            f"$WScriptShell = New-Object -ComObject WScript.Shell; "
+            f"$Shortcut = $WScriptShell.CreateShortcut('{shortcut_path}'); "
+            f"$Shortcut.TargetPath = '{target}'; "
+            f"$Shortcut.WorkingDirectory = '{workdir}'; "
+            f"$Shortcut.Description = 'KINETIC Streaming Cam & Controller'; "
+            f"$Shortcut.IconLocation = '{target},0'; "
+            f"$Shortcut.Save()"
+        )
+        subprocess.run(["powershell", "-NoProfile", "-Command", ps_command], check=True, timeout=5)
+        
+        try:
+            import ctypes
+            ctypes.windll.shell32.SHChangeNotify(0x08000000, 0x0000, None, None)
+        except Exception:
+            pass
+    except Exception:
+        pass
 
 
 class DesktopBridge:
@@ -222,8 +259,47 @@ class DesktopBridge:
         if self._server:
             self._server.should_exit = True
 
+    def create_shortcut(self) -> dict:
+        try:
+            create_start_menu_shortcut()
+            return {"ok": True}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    def apply_update(self, download_url: str) -> dict:
+        try:
+            if not download_url or not download_url.startswith("http"):
+                raise ValueError("Invalid download URL.")
+            temp_dir = Path(os.environ.get("TEMP", Path.home()))
+            update_exe = temp_dir / "KINETIC_update.exe"
+            
+            req = urllib.request.Request(download_url, headers={"User-Agent": "KINETIC-Updater"})
+            with urllib.request.urlopen(req, timeout=30) as response, open(update_exe, "wb") as f:
+                shutil.copyfileobj(response, f)
+                
+            target_exe = sys.executable
+            if not getattr(sys, "frozen", False):
+                return {"ok": False, "error": "Updates are only supported in packaged desktop builds."}
+                
+            batch_script = temp_dir / "kinetic_update.bat"
+            batch_content = f"""@echo off
+timeout /t 2 /nobreak >nul
+move /y "{update_exe}" "{target_exe}"
+start "" "{target_exe}"
+del "%~f0"
+"""
+            batch_script.write_text(batch_content, encoding="utf-8")
+            subprocess.Popen(["cmd.exe", "/c", str(batch_script)], creationflags=subprocess.CREATE_NO_WINDOW if hasattr(subprocess, "CREATE_NO_WINDOW") else 0)
+            
+            if self._window:
+                self._window.destroy()
+            return {"ok": True}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
 
 def main() -> None:
+    create_start_menu_shortcut()
     if PID_FILE.exists():
         try:
             existing_pid = int(PID_FILE.read_text(encoding="utf-8").strip())

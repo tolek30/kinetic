@@ -12,6 +12,16 @@
   </head>
   <body>
     <div class="app">
+      <div class="update-banner" id="updateBanner" hidden>
+        <div class="update-banner-inner">
+          <span class="update-banner-icon">✨</span>
+          <span class="update-banner-text" id="updateBannerText">KINETIC update is available!</span>
+          <div class="update-banner-actions">
+            <button type="button" class="btn btn-small btn-lime" id="updateDownloadBtn">Update & restart</button>
+            <button type="button" class="btn btn-small btn-ghost" id="updateDismissBtn" title="Dismiss">✕</button>
+          </div>
+        </div>
+      </div>
       <header class="topbar">
         <a class="brand" href="/" aria-label="KINETIC home">
           <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>

@@ -743,11 +743,51 @@ function bindEvents() {
   });
 }
 
+async function checkForUpdates() {
+  try {
+    const res = await fetch('/api/release', { cache: 'no-store' });
+    const data = await res.json();
+    if (data.ok && data.updateAvailable) {
+      $('#updateBannerText').textContent = `KINETIC v${data.latestVersion} is available (${data.releaseName || 'New release'})!`;
+      $('#updateBanner').hidden = false;
+    }
+  } catch {}
+}
+
 async function bootstrap() {
   bindEvents();
+  $('#updateDownloadBtn')?.addEventListener('click', async () => {
+    const btn = $('#updateDownloadBtn');
+    btn.disabled = true;
+    btn.textContent = 'Updating...';
+    try {
+      const res = await fetch('/api/release');
+      const data = await res.json();
+      if (data.downloadUrl) {
+        if (window.pywebview && window.pywebview.api && typeof window.pywebview.api.apply_update === 'function') {
+          const result = await window.pywebview.api.apply_update(data.downloadUrl);
+          if (!result.ok) throw new Error(result.error || 'Update failed');
+        } else {
+          window.open(data.downloadUrl, '_blank');
+        }
+      } else {
+        throw new Error('No download URL available.');
+      }
+    } catch (err) {
+      toast(`Update error: ${err.message}`, true);
+      btn.disabled = false;
+      btn.textContent = 'Update & restart';
+    }
+  });
+
+  $('#updateDismissBtn')?.addEventListener('click', () => {
+    $('#updateBanner').hidden = true;
+  });
+
   await loadConfig();
   await loadNetworkInfo();
   await refreshMicDevices();
+  checkForUpdates();
   navigator.mediaDevices?.addEventListener?.('devicechange', refreshMicDevices);
   connectSocket();
   setInterval(() => {

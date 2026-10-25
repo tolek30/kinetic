@@ -108,6 +108,40 @@ svg {
   min-height: 0;
 }
 
+/* Update banner */
+.update-banner {
+  background: linear-gradient(90deg, rgba(216, 255, 71, 0.14), rgba(216, 255, 71, 0.06));
+  border-bottom: 1px solid var(--lime-line);
+  padding: 10px 22px;
+  position: relative;
+  z-index: 25;
+}
+
+.update-banner-inner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: 1600px;
+  margin: 0 auto;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.update-banner-icon {
+  font-size: 16px;
+}
+
+.update-banner-text {
+  flex: 1;
+}
+
+.update-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* Top bar ------------------------------------------------------------------ */
 
 .topbar {

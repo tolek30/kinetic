@@ -39,7 +39,7 @@ PORT = int(os.environ.get("PORT", "7399"))
 HOST = os.environ.get("HOST", "0.0.0.0")
 ROLE = "host"
 DESKTOP_MODE = False
-APP_VERSION = "2.0.1"
+APP_VERSION = "2.0.0"
 MAX_UPLOAD_BYTES = 30 * 1024 * 1024
 MAX_IMAGE_DIMENSION = 16_384
 MAX_IMAGE_PIXELS = 100_000_000
@@ -426,6 +426,7 @@ async def proxy_request(method: str, path: str, body: bytes = b"") -> Response:
 
 @app.get("/api/release")
 async def check_release():
+    import urllib.request
     try:
         req = urllib.request.Request(
             "https://api.github.com/repos/tolek30/kinetic/releases/latest",
@@ -435,8 +436,11 @@ async def check_release():
             with urllib.request.urlopen(req, timeout=5) as response:
                 return json.loads(response.read().decode("utf-8"))
         data = await asyncio.to_thread(fetch_release)
-        tag_name = data.get("tag_name", "").lstrip("v")
-        name = data.get("name", data.get("tag_name", "New release"))
+        tag_name = data.get("tag_name", "")
+        name = data.get("name", "")
+        version_source = name if ("." in name) else (tag_name if "." in tag_name else (name or tag_name))
+        latest_version = version_source.lstrip("v").strip()
+        release_title = name or tag_name or "New release"
         body = data.get("body", "")
         download_url = None
         for asset in data.get("assets", []):
@@ -447,13 +451,13 @@ async def check_release():
         if not download_url:
             download_url = data.get("html_url")
         current = APP_VERSION
-        update_available = bool(tag_name and tag_name != current)
+        update_available = bool(latest_version and latest_version != current)
         return {
             "ok": True,
             "currentVersion": current,
-            "latestVersion": tag_name or current,
+            "latestVersion": latest_version or current,
             "updateAvailable": update_available,
-            "releaseName": name,
+            "releaseName": release_title,
             "releaseNotes": body[:500],
             "downloadUrl": download_url
         }

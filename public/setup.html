@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>KINETIC Setup</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./css/setup.css" />
+  </head>
+  <body>
+    <main class="setup-shell">
+      <header class="setup-header">
+        <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+        <div><strong>KINETIC</strong><small>DESKTOP STREAM CAMS</small></div>
+        <span class="local-badge"><i></i> PRIVATE BY DEFAULT</span>
+      </header>
+
+      <section class="intro">
+        <p class="eyebrow">START A SESSION</p>
+        <h1>Where does this<br />camera belong?</h1>
+        <p class="intro-copy">One Host can serve up to 10 independent stream cams. Join as an Instance from every other PC.</p>
+      </section>
+
+      <div class="role-switch" role="tablist" aria-label="Choose app role">
+        <button type="button" class="role-card is-active" data-mode="host" role="tab" aria-selected="true">
+          <span class="role-icon host-icon" aria-hidden="true">H</span>
+          <span><strong>Host</strong><small>Run the LAN hub and manage cam links</small></span>
+          <span class="radio-mark"></span>
+        </button>
+        <button type="button" class="role-card" data-mode="instance" role="tab" aria-selected="false">
+          <span class="role-icon instance-icon" aria-hidden="true">I</span>
+          <span><strong>Instance</strong><small>Connect this PC’s mic and art to a Host</small></span>
+          <span class="radio-mark"></span>
+        </button>
+      </div>
+
+      <section class="role-panel is-active" data-panel="host">
+        <div class="panel-title"><div><p class="eyebrow">HOST SETTINGS</p><h2>Make a room for your crew</h2></div><span class="capacity-chip">10 CAMS MAX</span></div>
+        <div class="form-grid">
+          <label class="field full"><span>Host name</span><input id="hostName" maxlength="80" value="Stream Cam Host" autocomplete="off" /></label>
+          <label class="field"><span>Network port</span><input id="hostPort" type="number" min="1024" max="65535" value="7399" /></label>
+          <label class="field"><span>Cam capacity</span><select id="maxRooms"><option>10</option><option>9</option><option>8</option><option>7</option><option>6</option><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select></label>
+          <label class="field full"><span>Public address (optional)</span><div class="input-action"><input id="publicUrl" placeholder="http://your-public-ip:7399" autocomplete="url" spellcheck="false" /><button id="detectPublic" type="button">Detect IP</button></div><small>Set this to make OBS links point outside your LAN. Public HTTP is unencrypted; HTTPS needs a domain or secure proxy.</small></label>
+          <label class="field full"><span>Invite code</span><div class="input-action"><input id="accessCode" maxlength="128" autocomplete="off" spellcheck="false" /><button id="generateCode" type="button">Generate</button></div><small>Instances need this code to join. Keep it within your group.</small></label>
+        </div>
+        <button class="primary-action" id="startHost" type="button"><span>Start Host</span><b aria-hidden="true">↗</b></button>
+        <p class="role-footnote">Without a public address, links are LAN-only. For worldwide access, forward the selected port and set your public URL; HTTPS protects invite codes in transit.</p>
+      </section>
+
+      <section class="role-panel" data-panel="instance" hidden>
+        <div class="panel-title"><div><p class="eyebrow">INSTANCE CONNECTION</p><h2>Join an existing Host</h2></div><span class="capacity-chip">ONE CAM</span></div>
+        <div class="form-grid">
+          <label class="field full"><span>Host address</span><input id="hostAddress" placeholder="192.168.1.20" autocomplete="url" spellcheck="false" /></label>
+          <label class="field"><span>Host port</span><input id="instancePort" type="number" min="1" max="65535" value="7399" /></label>
+          <label class="field"><span>Your cam name</span><input id="instanceName" maxlength="80" placeholder="Maya’s cam" autocomplete="off" /></label>
+          <label class="field full"><span>Invite code</span><input id="instanceCode" maxlength="128" autocomplete="off" spellcheck="false" /></label>
+        </div>
+        <button class="primary-action" id="joinHost" type="button"><span>Connect to Host</span><b aria-hidden="true">↗</b></button>
+        <p class="role-footnote">Your microphone is captured in this desktop app. Your Host relays the finished overlay to OBS.</p>
+      </section>
+
+      <div class="setup-status" id="setupStatus" role="status" aria-live="polite" hidden></div>
+      <footer class="setup-footer"><span>PYTHON DESKTOP</span><span class="footer-dot"></span><span>HTML · CSS · JS</span></footer>
+    </main>
+    <script src="./js/setup.js"></script>
+  </body>
+</html>

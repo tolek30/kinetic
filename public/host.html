@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>KINETIC Host</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/css/host.css" />
+  </head>
+  <body>
+    <main class="host-app">
+      <header class="host-topbar">
+        <a class="brand" href="/host"><span class="brand-mark"><i></i><i></i><i></i></span><span><b>KINETIC</b><small>HOST CONSOLE</small></span></a>
+        <div class="host-status"><span class="live-dot"></span><span>LAN HOST ACTIVE</span><b id="onlineCount">0 / 10</b></div>
+        <a class="open-local" href="/?instanceId=host">Open my cam controls <span>↗</span></a>
+      </header>
+
+      <section class="hero">
+        <div><p class="eyebrow">YOUR CAMERA HUB</p><h1 id="heroName">Host Console</h1><p>Each Instance has its own art, mic, motion, and OBS link.</p></div>
+        <div class="host-address"><small>HOST ADDRESS FOR SHARING</small><div><code id="hostAddress">Finding address…</code><button id="detectPublicNow" type="button">Public IP</button><button id="copyAddress" type="button">Copy</button></div></div>
+      </section>
+      <div class="upgrade-notice" id="upgradeNotice" hidden>Restart the Host to enable per-camera OBS mirroring. Existing rooms and files are kept.</div>
+
+      <div class="dashboard-grid">
+        <section class="rooms-section">
+          <div class="section-head"><div><p class="eyebrow">CAM ROOMS</p><h2>Your stream cams</h2></div><span class="count" id="roomCount">0 / 10</span></div>
+          <div class="room-list" id="roomList" aria-live="polite"></div>
+          <div class="empty-rooms" id="emptyRooms" hidden><strong>No Instances have joined yet.</strong><p>Give your friends the host address and invite code from Settings.</p></div>
+        </section>
+
+        <aside class="settings-card">
+          <p class="eyebrow">NETWORK SETTINGS</p>
+          <h2>Host access</h2>
+          <p class="settings-copy">Share the invite code only with people you trust on this LAN.</p>
+          <label><span>Host name</span><input id="settingName" maxlength="80" /></label>
+          <div id="publicAddressSettings"><label><span>Public URL (optional)</span><div class="code-input"><input id="settingPublicUrl" placeholder="http://your-public-ip:7399" /><button id="detectPublicUrl" type="button">Detect</button></div></label></div>
+          <label><span>Invite code</span><div class="code-input"><input id="settingCode" type="password" maxlength="128" /><button id="toggleCode" type="button">Show</button></div></label>
+          <label><span>Maximum cameras, including Host</span><select id="settingCapacity"><option>10</option><option>9</option><option>8</option><option>7</option><option>6</option><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select></label>
+          <button id="saveSettings" class="save-button" type="button">Save Host settings</button>
+          <div class="settings-message" id="settingsMessage" role="status" aria-live="polite"></div>
+          <div class="host-warning"><b>Public access</b><p>Port forwarding makes this Host reachable worldwide. Plain HTTP is not encrypted. Use HTTPS before sending invite codes over the public internet.</p></div>
+          <div class="desktop-note"><span>DESKTOP APP</span><span>HTML · CSS · JS</span></div>
+        </aside>
+      </div>
+    </main>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="/js/host.js"></script>
+  </body>
+</html>

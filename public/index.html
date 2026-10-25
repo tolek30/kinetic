@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0a0b0d" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>KINETIC — Talking Head for OBS</title>
+    <link rel="stylesheet" href="/css/rig.css" />
+    <link rel="stylesheet" href="/css/controller.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="KINETIC home">
+          <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+          <span class="brand-type"><strong>KINETIC</strong><em>talking head</em></span>
+        </a>
+        <div class="topbar-status" aria-label="System status">
+          <span class="status-pill" id="statusServer" data-state="idle"><i></i><span>Server</span></span>
+          <span class="status-pill" id="statusMic" data-state="idle"><i></i><span>Mic off</span></span>
+          <span class="status-pill" id="statusOverlay" data-state="idle"><i></i><span>OBS</span></span>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-ghost" id="topCopy" type="button">Copy OBS link</button>
+          <a class="btn btn-lime" id="openOverlayTop" href="/overlay" target="_blank" rel="noreferrer">Open overlay</a>
+        </div>
+      </header>
+
+      <main class="main">
+        <section class="stage-column" aria-label="Rig preview">
+          <div class="stage-bar">
+            <div class="segmented layer-tabs" role="group" aria-label="Select layer">
+              <button type="button" class="is-active" data-select="body">Body</button>
+              <button type="button" data-select="head">Head</button>
+            </div>
+            <div class="stage-tools">
+              <span class="stage-hint">Drag to position · Scroll to scale · Alt + scroll to rotate</span>
+              <button type="button" class="tool-btn is-active" id="toggleGrid" title="Toggle checkerboard" aria-pressed="true">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 2h12v12H2zM2 6h12M2 10h12M6 2v12M10 2v12" /></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="stage-shell" id="stageShell">
+            <div class="preview" id="preview"></div>
+            <div class="empty-state" id="emptyState">
+              <div class="empty-glyph" aria-hidden="true"><span class="empty-head"></span><span class="empty-body"></span></div>
+              <p class="eyebrow">Two-piece rig</p>
+              <h2>Body stays still.<br />Head moves as you talk.</h2>
+              <p class="empty-copy">Add your body and head art. Use transparent PNG or WebP for a clean OBS overlay.</p>
+              <div class="empty-actions">
+                <button type="button" class="btn btn-lime" data-upload-slot="body">Add body</button>
+                <button type="button" class="btn btn-ghost" data-upload-slot="head">Add head</button>
+              </div>
+            </div>
+            <span class="stage-size">1920 × 1080</span>
+            <span class="drop-flash" id="dropFlash">Drop image to add</span>
+          </div>
+
+          <div class="stage-foot">
+            <div class="preview-state"><span class="live-dot"></span><span id="previewMode">Waiting for microphone</span></div>
+          <div class="mini-readout"><span>Voice <b id="readoutTalk">0%</b></span><span>Swing <b id="readoutLift">0°</b></span><span>Pivot <b>fixed</b></span></div>
+          </div>
+        </section>
+
+        <aside class="sidebar" aria-label="Controls">
+          <nav class="tabs" role="tablist" aria-label="Control sections">
+            <button type="button" role="tab" class="is-active" data-tab="assets" aria-selected="true">Rig</button>
+            <button type="button" role="tab" data-tab="talk" aria-selected="false">Talk</button>
+            <button type="button" role="tab" data-tab="obs" aria-selected="false">OBS</button>
+          </nav>
+          <div class="panels">
+            <section class="panel is-active" data-panel="assets" role="tabpanel">
+              <div class="panel-heading">
+                <div><p class="eyebrow">Layer stack</p><h2>Two pieces</h2></div>
+                <span class="count-badge" id="assetCount">0 / 2</span>
+              </div>
+              <div class="asset-stack">
+                <div class="asset-card" data-card="body">
+                  <button type="button" class="asset-main" data-upload-slot="body">
+                    <span class="asset-thumb" id="thumbBody"><span class="asset-add">+</span></span>
+                    <span class="asset-info"><strong>Body <em>static</em></strong><small id="metaBody">Not loaded</small></span>
+                  </button>
+                  <button type="button" class="asset-remove" data-remove="body" title="Remove body" aria-label="Remove body" hidden>×</button>
+                  <span class="asset-order">01</span>
+                </div>
+                <div class="asset-card" data-card="head">
+                  <button type="button" class="asset-main" data-upload-slot="head">
+                    <span class="asset-thumb" id="thumbHead"><span class="asset-add">+</span></span>
+                    <span class="asset-info"><strong>Head <em>talking</em></strong><small id="metaHead">Not loaded</small></span>
+                  </button>
+                  <button type="button" class="asset-remove" data-remove="head" title="Remove head" aria-label="Remove head" hidden>×</button>
+                  <span class="asset-order">02</span>
+                </div>
+              </div>
+              <p class="panel-note">The head swings up-left when the microphone detects speech. Its bottom-left pivot stays fixed.</p>
+              <div class="divider"></div>
+              <div class="inspector">
+                <div class="inspector-head">
+                  <div><p class="eyebrow">Selected layer</p><h3 id="layerName">Body</h3></div>
+                  <button type="button" class="icon-btn danger" id="layerRemove" title="Remove layer" aria-label="Remove selected layer">
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4h10M6 4V2.5h4V4M5 4l.5 9h5L11 4M6.5 6.5v4M9.5 6.5v4" /></svg>
+                  </button>
+                </div>
+                <label class="control"><span class="control-head"><span>Horizontal anchor</span><output id="outLayerX">960 px</output></span><input id="layerX" type="range" min="-500" max="2420" step="1" value="960" /></label>
+                <label class="control"><span class="control-head"><span>Vertical anchor</span><output id="outLayerY">1080 px</output></span><input id="layerY" type="range" min="-500" max="1580" step="1" value="1080" /></label>
+                <label class="control"><span class="control-head"><span>Scale</span><output id="outLayerScale">100%</output></span><input id="layerScale" type="range" min="0.02" max="4" step="0.01" value="1" /></label>
+                <label class="control"><span class="control-head"><span>Rotation</span><output id="outLayerRotation">0°</output></span><input id="layerRotation" type="range" min="-180" max="180" step="0.5" value="0" /></label>
+                <label class="control"><span class="control-head"><span>Opacity</span><output id="outLayerOpacity">100%</output></span><input id="layerOpacity" type="range" min="0" max="1" step="0.01" value="1" /></label>
+                <div class="inspector-actions">
+                  <button type="button" class="btn btn-small" id="layerCenter">Center</button>
+                  <button type="button" class="btn btn-small" id="layerFit">Fit</button>
+                  <button type="button" class="btn btn-small" id="headSit">Sit on body</button>
+                  <label class="switch-inline"><input type="checkbox" id="layerVisible" checked /><span class="switch-track"><span></span></span><span>Visible</span></label>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel" data-panel="talk" role="tabpanel">
+              <div class="panel-heading"><div><p class="eyebrow">Audio response</p><h2>Talk motion</h2></div><span class="count-badge" id="talkBadge">Off</span></div>
+              <div class="audio-card talk-card">
+                <div class="audio-head">
+                  <div><strong>Microphone</strong><small>Voice swings it up-left; silence returns it</small></div>
+                  <div class="audio-actions">
+                    <button type="button" class="btn btn-small btn-lime" id="audioStart">Enable mic</button>
+                    <button type="button" class="btn btn-small btn-ghost" id="audioStop" hidden>Disable</button>
+                  </div>
+                </div>
+                <label class="mic-select-wrap" for="micDevice"><span>Input device</span><select id="micDevice"><option value="">System default</option></select></label>
+                <div class="meter" id="audioMeter"><span id="audioBar"></span></div>
+                <div class="audio-meta"><span id="micMessage">Microphone is off</span><button type="button" class="text-button" id="testTalk">Test motion</button></div>
+              </div>
+              <p class="panel-note" id="remoteMicNote" hidden>This room’s microphone runs on its Instance PC. Choose its input from the Host dashboard.</p>
+              <div class="talk-explainer"><span class="talk-arrow" aria-hidden="true">↖</span><div><strong>Hinges left and up on speech.</strong><p>The bottom-left pivot stays fixed. The head swings back down when your voice stops.</p></div></div>
+              <div class="section-label">Head swing</div>
+              <label class="control"><span class="control-head"><span>Swing angle</span><output id="outSwing">18°</output></span><input type="range" min="0" max="35" step="0.5" data-setting="swing" /></label>
+              <label class="control"><span class="control-head"><span>Erratic kick</span><output id="outJitter">72%</output></span><input type="range" min="0" max="1" step="0.01" data-setting="jitter" /></label>
+              <label class="control"><span class="control-head"><span>Voice sensitivity</span><output id="outSensitivity">220%</output></span><input type="range" min="0.2" max="8" step="0.05" data-setting="sensitivity" /></label>
+              <label class="control"><span class="control-head"><span>Noise gate</span><output id="outThreshold">4%</output></span><input type="range" min="0" max="0.4" step="0.005" data-setting="threshold" /></label>
+              <label class="control"><span class="control-head"><span>Motion smoothing</span><output id="outSmoothing">22%</output></span><input type="range" min="0" max="0.9" step="0.01" data-setting="smoothing" /></label>
+              <div class="tips-card"><strong>Background listening</strong><p>Allow mic access once and leave KINETIC running. Its audio worklet keeps listening while you focus other desktop apps; audio stays on this PC.</p></div>
+            </section>
+
+            <section class="panel" data-panel="obs" role="tabpanel">
+              <div class="panel-heading"><div><p class="eyebrow">Output</p><h2>OBS</h2></div><span class="count-badge lime" id="obsConnected">0 live</span></div>
+              <label class="field-label" for="overlayUrl">Browser Source URL</label>
+              <div class="copy-field"><input id="overlayUrl" type="text" readonly value="http://localhost:7399/overlay" /><button type="button" class="copy-btn" id="copyOverlay">Copy</button></div>
+              <label class="field-label network-label" for="networkOverlayUrl">Shareable overlay URL</label>
+              <div class="copy-field"><input id="networkOverlayUrl" type="text" readonly value="Finding network address…" /><button type="button" class="copy-btn" id="copyNetworkOverlay" disabled>Copy</button></div>
+              <p class="panel-note network-note">Each room has its own assets, controls, and OBS link. Share this room’s link with friends on the host’s Wi-Fi/LAN.</p>
+              <a class="text-link" id="openOverlay" href="/overlay" target="_blank" rel="noreferrer">Preview in a new tab ↗</a>
+              <a class="text-link host-dashboard-link" id="hostDashboardLink" href="/host" hidden>Open Host dashboard ↗</a>
+              <div class="steps">
+                <div class="step"><span>1</span><p>Add a <strong>Browser</strong> source in OBS.</p></div>
+                <div class="step"><span>2</span><p>Paste the URL and set <strong>1920 × 1080</strong>.</p></div>
+                <div class="step"><span>3</span><p>Keep the source background <strong>transparent</strong>.</p></div>
+              </div>
+              <div class="section-label">Overlay background</div>
+              <div class="background-grid" role="group" aria-label="Overlay background">
+                <button type="button" class="bg-swatch is-active" data-bg="transparent" title="Transparent"><span class="checker"></span><em>Transparent</em></button>
+                <button type="button" class="bg-swatch" data-bg="black" title="Black"><span class="swatch-black"></span><em>Black</em></button>
+                <button type="button" class="bg-swatch" data-bg="white" title="White"><span class="swatch-white"></span><em>White</em></button>
+                <button type="button" class="bg-swatch" data-bg="green" title="Chroma green"><span class="swatch-green"></span><em>Green</em></button>
+              </div>
+              <div class="divider"></div>
+              <div class="danger-zone"><div><strong>Reset rig</strong><small>Clears both layers and settings.</small></div><button type="button" class="btn btn-danger btn-small" id="resetConfig">Reset</button></div>
+              <p class="panel-note footer-note">KINETIC stays on this computer. Audio is analyzed locally in your browser and is never uploaded.</p>
+            </section>
+          </div>
+          <footer class="sidebar-foot"><span id="serverInfo">LAN server</span><span class="dot-sep">·</span><span>v2.0</span></footer>
+        </aside>
+      </main>
+    </div>
+
+    <input id="fileInput" type="file" accept="image/png,image/webp,image/gif,image/jpeg" hidden />
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/js/controller.js"></script>
+  </body>
+</html>

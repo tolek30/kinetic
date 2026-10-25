@@ -1,0 +1,17 @@
+node_modules/
+.venv/
+__pycache__/
+*.py[cod]
+build/
+dist/
+*.spec
+data/uploads/*
+data/config.json
+data/rooms/
+data/desktop-settings.json
+data/desktop-client.json
+data/desktop.pid
+data/server.out.log
+data/server.err.log
+data/server.pid
+!data/uploads/.gitkeep
